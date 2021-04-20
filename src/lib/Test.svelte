@@ -8,39 +8,33 @@
 
   let table = "items";
 
-  export const supabase = createClient(
-    env.VITE_SUPABASE_URL,
-    env.VITE_SUPABASE_KEY
-  );
+  const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_KEY);
 
   let fetchItems = async () => {
-    var { data, error } = {};
     var { data, error } = await supabase.from(table).select();
-    console.log(`Fetched items - `, data);
-    if (!error) {
-      return data;
-    } else {
+    if (error) {
       throw error;
+    } else {
+      return data;
     }
   };
 
   let items = writable([]);
 
   let updateItems = async () => {
-    let updatedItems = await fetchItems().then((results) => {
-      console.log(`Updated items - `, results);
-      items.set(results);
-    });
+    try {
+      let updatedItems = await fetchItems();
+      items.set(updatedItems);
+    } catch (error) {
+      console.error(error.message)
+    }
   };
 
   const itemsSub = supabase
     .from(table)
-    .on("*", async () => {
-      try {
-        updateItems();
-      } catch (error) {
-        throw error;
-      }
+    .on("*", (payload) => {
+      console.log("payload", payload);
+      updateItems()
     })
     .subscribe();
 
